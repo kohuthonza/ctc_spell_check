@@ -3,20 +3,22 @@ import itertools
 import numpy as np
 from collections.abc import Iterable
 
-chars = ['�', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
          'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r','s', 't', 'u',
          'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '!', '?', ',', '.','\'','"', '-',':',';' ,
          '(', ')', '%','/', '—', '–', '”', '“', '+', '=', '§', '[', ']', '’', '&', '*', '#']
 
 
 class TextMapper:
-    def __init__(self, chars, joker='�', char_mapping=[]):
+    def __init__(self, chars, joker='�', pad='Ξ', char_mapping=[]):
         self.chars = chars
+        self.chars = [joker, pad] + self.chars
         self._char_mapping = char_mapping
-        self._from_char = list(chars)
+        self._from_char = list(self.chars)
         self.joker = joker
+        self.pad = pad
         self._joker_position = self._from_char.index(joker)
-        self._to_char = [chr(i) for i in range(len(chars))]
+        self._to_char = [chr(i) for i in range(len(self.chars))]
         self._translation_table = None
         self._update_translation_table()
 

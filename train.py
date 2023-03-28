@@ -1,3 +1,5 @@
+import random
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,11 +7,12 @@ import time
 import os
 import sys
 import argparse
-from torch.utils.data import DataLoader
 
 from safe_gpu.safe_gpu import GPUOwner
 
 from model_wrapper import RegressionModelWrapper
+
+from dataset import SpellDataset
 
 
 def parseargs():
@@ -18,18 +21,12 @@ def parseargs():
 
     # Datasets definition
     #
-    parser.add_argument('--trn-wave-directory-path', type=str)
-    parser.add_argument('--tst-wave-directory-path', action='append', type=str)
-    parser.add_argument('--trn-num-workers', default=8, type=int)
-    parser.add_argument('--tst-num-workers', default=8, type=int)
-    parser.add_argument('--trn-prefetch-factor', default=1, type=int)
-    parser.add_argument('--tst-prefetch-factor', default=1, type=int)
-    parser.add_argument('--max-pressure', default=60000, type=float)
-    parser.add_argument('--max-speed', default=1.6, type=float)
+    parser.add_argument('--trn', type=str)
+    parser.add_argument('--tst', action='append', type=str)
 
     # Model definition
     #
-    parser.add_argument('-n', '--net', required=True, type=str)
+    parser.add_argument('-n', '--net', type=str)
 
     # Training
     #
@@ -62,15 +59,20 @@ def main():
 
     print("INIT DATASETS")
     print()
-    trn_dataset, tst_datasets = init_datasets(trn_wave_directory_path=args.trn_wave_directory_path,
-                                              tst_wave_directory_path=args.tst_wave_directory_path,
-                                              batch_size=args.batch_size,
-                                              max_pressure=args.max_pressure,
-                                              max_speed=args.max_speed,
-                                              trn_num_workers=args.trn_num_workers,
-                                              tst_num_workers=args.tst_num_workers,
-                                              trn_prefetch_factor=args.trn_prefetch_factor,
-                                              tst_prefetch_factor=args.tst_prefetch_factor)
+    trn_dataset, tst_datasets = init_datasets(trn=args.trn, tst=args.tst)
+
+    t1 = time.time()
+    for i in range(1000):
+        b = trn_dataset.get_batch(batch_size=64)
+        #for gt_line, target_line in zip(b['gt_lines'], b['target_lines']):
+            #print(gt_line)
+            #print(target_line)
+            #print()
+            #print()
+    t2 = time.time()
+    print(t2 - t1)
+
+    sys.exit(0)
 
     gpu_owner = GPUOwner()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -277,24 +279,19 @@ def export_waves(all_outputs, all_paths, max_speed, iteration, wave_directory_pa
                 f.writelines(out_lines)
 
 
-def init_datasets(trn_wave_directory_path, tst_wave_directory_path, batch_size, max_pressure=60000, max_speed=1.6,
-                  trn_num_workers=1, tst_num_workers=1, trn_prefetch_factor=100, tst_prefetch_factor=100):
+def init_datasets(trn, tst):
 
     trn_dataset = None
-    if trn_wave_directory_path is not None:
-        trn_dataset = WaveDataset(trn_wave_directory_path, max_pressure=max_pressure, max_speed=max_speed)
-        trn_dataset = DataLoader(trn_dataset, batch_size=batch_size, shuffle=True,
-                                 num_workers=trn_num_workers, prefetch_factor=trn_prefetch_factor,
-                                 persistent_workers=True)
+    if trn is not None:
+        trn_dataset = SpellDataset(trn, replace_rnd=lambda: random.randint(1, 1),
+                                   insert_rnd=lambda: random.randint(1, 1),
+                                   delete_rnd=lambda: random.randint(1, 1))
 
     tst_datasets = None
-    if tst_wave_directory_path is not None:
+    if tst is not None:
         tst_datasets = []
-        for tst_directory_path in tst_wave_directory_path:
-            tst_dataset = WaveDataset(tst_directory_path, max_pressure=max_pressure, max_speed=max_speed)
-            tst_dataset = DataLoader(tst_dataset, batch_size=batch_size, shuffle=False,
-                                     num_workers=tst_num_workers, prefetch_factor=tst_prefetch_factor,
-                                     persistent_workers=True)
+        for tst_path in tst:
+            tst_dataset = SpellDataset(tst_path)
             tst_datasets.append(tst_dataset)
 
     return trn_dataset, tst_datasets
