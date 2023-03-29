@@ -10,13 +10,13 @@ chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', '
 
 
 class TextMapper:
-    def __init__(self, chars, joker='�', pad='Ξ', char_mapping=[]):
-        self.chars = chars
-        self.chars = [joker, pad] + self.chars
+    def __init__(self, chars,  blank='ψ', joker='�', pad='Ξ', char_mapping=[]):
+        self.chars = [blank, joker] + chars + [pad]
         self._char_mapping = char_mapping
         self._from_char = list(self.chars)
         self.joker = joker
         self.pad = pad
+        self.blank = blank
         self._joker_position = self._from_char.index(joker)
         self._to_char = [chr(i) for i in range(len(self.chars))]
         self._translation_table = None

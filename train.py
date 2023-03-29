@@ -62,13 +62,28 @@ def main():
     trn_dataset, tst_datasets = init_datasets(trn=args.trn, tst=args.tst)
 
     t1 = time.time()
-    for i in range(1000):
-        b = trn_dataset.get_batch(batch_size=64)
-        #for gt_line, target_line in zip(b['gt_lines'], b['target_lines']):
-            #print(gt_line)
-            #print(target_line)
-            #print()
-            #print()
+    for i in range(20):
+        b = trn_dataset.get_random_batch(batch_size=5)
+        for gt_line, target_line in zip(b['gt_lines'], b['target_lines']):
+            print(gt_line)
+            print(target_line)
+            print()
+            print()
+    t2 = time.time()
+    print(t2 - t1)
+
+    t1 = time.time()
+    while True:
+        b = tst_datasets[0].get_seq_batch(batch_size=8)
+        if b is None:
+            break
+        for gt_line, target_line in zip(b['gt_lines'], b['target_lines']):
+            print(gt_line)
+            print(target_line)
+            print()
+        print()
+        print()
+        print()
     t2 = time.time()
     print(t2 - t1)
 
@@ -283,15 +298,15 @@ def init_datasets(trn, tst):
 
     trn_dataset = None
     if trn is not None:
-        trn_dataset = SpellDataset(trn, replace_rnd=lambda: random.randint(1, 1),
-                                   insert_rnd=lambda: random.randint(1, 1),
-                                   delete_rnd=lambda: random.randint(1, 1))
+        trn_dataset = SpellDataset(trn, replace_rnd=lambda x: int(abs(np.random.normal(0, 1)) * x / 30.0),
+                                   insert_rnd=lambda x: int(abs(np.random.normal(0, 1)) * x / 30.0),
+                                   delete_rnd=lambda x: int(abs(np.random.normal(0, 1)) * x / 30.0))
 
     tst_datasets = None
     if tst is not None:
         tst_datasets = []
         for tst_path in tst:
-            tst_dataset = SpellDataset(tst_path)
+            tst_dataset = SpellDataset(tst_path, sort=True)
             tst_datasets.append(tst_dataset)
 
     return trn_dataset, tst_datasets
